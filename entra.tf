@@ -24,10 +24,4 @@ resource "cloudflare_zero_trust_access_identity_provider" "entra" {
 
 locals {
   entra_idp_id = var.manage_entra_idp ? cloudflare_zero_trust_access_identity_provider.entra[0].id : var.existing_entra_idp_id
-  entra_group_rules = [for group_id in sort(tolist(var.entra_allowed_group_ids)) : {
-    azure_ad = {
-      identity_provider_id = local.entra_idp_id
-      id                   = group_id
-    }
-  }]
 }

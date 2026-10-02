@@ -1,23 +1,22 @@
-output "access_application_id" {
-  description = "Cloudflare Access application ID."
-  value       = cloudflare_zero_trust_access_application.windows_rdp.id
-}
-
-output "infrastructure_target_id" {
-  description = "Cloudflare Access infrastructure target ID."
-  value       = cloudflare_zero_trust_access_infrastructure_target.windows.id
-}
-
-output "application_url" {
-  description = "Browser RDP application base URL. Use the App Launcher to select the target."
-  value       = "https://${var.application_domain}"
-}
-
-output "target" {
-  description = "Configured Windows target."
+output "access_applications" {
+  description = "Created browser-RDP applications keyed by access profile."
   value = {
-    hostname = var.target_hostname
-    ipv4     = var.target_ipv4
-    port     = var.rdp_port
+    for key, app in cloudflare_zero_trust_access_application.windows_rdp : key => {
+      id  = app.id
+      url = "https://${var.rdp_access_profiles[key].application_domain}"
+    }
+  }
+}
+
+output "infrastructure_targets" {
+  description = "Created Windows targets keyed by server name."
+  value = {
+    for key, target in cloudflare_zero_trust_access_infrastructure_target.windows : key => {
+      id                 = target.id
+      hostname           = target.hostname
+      ipv4               = var.rdp_servers[key].ipv4
+      virtual_network_id = var.rdp_servers[key].virtual_network_id
+      access_profile     = var.rdp_servers[key].access_profile
+    }
   }
 }

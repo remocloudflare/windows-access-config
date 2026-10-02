@@ -15,12 +15,12 @@ Cloudflare Tunnel private route / virtual network
 Windows Server 10.168.0.27
 ```
 
-The repository currently defaults to the existing `remo-win-vm` private address `10.168.0.27`. You can replace it with a Windows VM behind Proxmox without changing the Access model: route that private IP through a Tunnel and update `target_ipv4` and, when needed, `virtual_network_id`.
+The repository uses maps of reusable access profiles and Windows servers. Add servers without duplicating policy code; servers that select the same profile share one browser-RDP application and authorization policy.
 
 ## Creates
 
-- One Access infrastructure target for the Windows server.
-- One browser-rendered RDP Access application with a target criterion on TCP 3389.
+- One Access infrastructure target per `rdp_servers` entry.
+- One browser-rendered RDP Access application per `rdp_access_profiles` entry.
 - One Entra-only login method with instant authentication.
 - One Entra email/UPN or security-group allow policy.
 - One proxied placeholder DNS A record (`240.0.0.0`) unless disabled.
@@ -45,7 +45,18 @@ The repository currently defaults to the existing `remo-win-vm` private address 
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Set the values in `terraform.tfvars`. `entra_allowed_emails` is intentionally required unless `entra_allowed_group_ids` is populated; there is no permissive domain-wide default.
+Set the values in `terraform.tfvars`. Every access profile requires either exact Entra emails or Entra group Object IDs; there is no permissive domain-wide default.
+
+### Multiple servers and reusable access profiles
+
+`rdp_servers` is the inventory. Each server supplies its IP, Cloudflare virtual network, logical target hostname, and `access_profile` key. `rdp_access_profiles` is the reusable authorization boundary: application hostname, allowed Entra groups/users, RDP ports, and clipboard controls.
+
+The checked-in example includes two targets:
+
+- GCP Windows: `10.168.0.27`
+- Helix Windows: `10.7.0.6`
+
+Both currently select `operators`, so Terraform creates two targets but only one Access application. To give a customer different users, hostname, or clipboard controls, add another profile and point that customer's server entries at it. For 100–1,000 users, use `allowed_group_ids`; do not enumerate users in Terraform.
 
 ### API token
 
@@ -66,12 +77,12 @@ Create the token in **Cloudflare dashboard → My Profile → API Tokens → Cre
 | `cloudflare_api_token` | Cloudflare API credential used by Terraform | **My Profile → API Tokens**; save it only in the Git-ignored `terraform.tfvars` |
 | `account_id` | Cloudflare account that owns Zero Trust, the Tunnel route, Entra IdP, and Access app | Cloudflare dashboard URL after `dash.cloudflare.com/`, or **Account home → Account ID** |
 | `zone_id` | Cloudflare zone that owns `application_domain` | **Websites → your zone → Overview → Zone ID** |
-| `application_domain` | New public hostname used to open browser RDP | Choose an unused hostname in that zone, such as `rdp.example.com`; Terraform creates its proxied placeholder DNS record |
-| `target_ipv4` | Private IP of the Windows host | Windows `ipconfig`, Azure/GCP NIC details, or the Proxmox VM network configuration |
-| `virtual_network_id` | **Cloudflare Zero Trust virtual-network UUID** containing the Tunnel CIDR route to `target_ipv4` | **Zero Trust → Networks → Routes**; locate the route covering the target IP and use its virtual network. This is not an Azure VNet ID, Azure subscription ID, GCP VPC ID, or Proxmox network name |
+| `rdp_access_profiles` | Reusable app/policy definitions | Choose one application hostname and Entra authorization boundary per profile |
+| `rdp_servers` | Windows server inventory | Add each private Windows IP and select an access-profile key |
+| `rdp_servers[*].virtual_network_id` | **Cloudflare Zero Trust virtual-network UUID** containing the Tunnel route to that server | **Zero Trust → Networks → Routes**; locate the route covering each target IP. This is not an Azure VNet ID, Azure subscription ID, GCP VPC ID, or Proxmox network name |
 | `existing_entra_idp_id` | Existing Cloudflare Access Microsoft Entra IdP UUID | **Zero Trust → Integrations → Identity providers → Entra ID**; use the UUID from the edit-page URL or API response |
-| `entra_allowed_emails` | Exact Entra users authorized by Access | Use each user's Entra email/UPN as returned by the configured email claim |
-| `entra_allowed_group_ids` | Optional replacement for the email allowlist | Microsoft Entra admin center → **Identity → Groups → All groups → group → Object ID** |
+| `rdp_access_profiles[*].allowed_emails` | Exact Entra users authorized by a profile | Use each user's Entra email/UPN as returned by the configured email claim |
+| `rdp_access_profiles[*].allowed_group_ids` | Preferred production authorization | Microsoft Entra admin center → **Identity → Groups → All groups → group → Object ID** |
 
 ### Find the Cloudflare virtual network correctly
 

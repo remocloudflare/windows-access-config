@@ -3,32 +3,46 @@
 # read CLOUDFLARE_API_TOKEN in CI/automation.
 cloudflare_api_token = "<CLOUDFLARE_API_TOKEN>"
 
-# Cloudflare account that owns Zero Trust, the Tunnel route, and Entra IdP.
-# Dashboard: Account home -> Account ID.
+# Cloudflare account and zone that own Zero Trust and the browser-RDP hostnames.
 account_id = "<CLOUDFLARE_ACCOUNT_ID>"
-
-# Zone that owns application_domain.
-# Dashboard: Websites -> your zone -> Overview -> Zone ID.
-zone_id = "<CLOUDFLARE_ZONE_ID>"
-
-# Choose an unused hostname in the zone. Terraform creates the proxied DNS record.
-application_domain = "rdp.example.com"
-
-# Private Windows IP reachable from the cloudflared connector. Defaults to
-# 10.168.0.27 in variables.tf; set it explicitly for a different server.
-target_ipv4 = "10.168.0.27"
-
-# Cloudflare Zero Trust virtual-network UUID on the Tunnel route covering
-# target_ipv4. This is NOT an Azure VNet, GCP VPC, or Proxmox network ID.
-# Dashboard: Zero Trust -> Networks -> Routes. If the matching route uses the
-# default Cloudflare virtual network, remove this line.
-virtual_network_id = "<CLOUDFLARE_ZERO_TRUST_VIRTUAL_NETWORK_ID>"
+zone_id    = "<CLOUDFLARE_ZONE_ID>"
 
 # Existing Microsoft Entra identity provider UUID in Cloudflare Access.
-# Dashboard: Zero Trust -> Integrations -> Identity providers -> Entra ID.
 existing_entra_idp_id = "<CLOUDFLARE_ENTRA_IDP_ID>"
 
-# Exact Entra email/UPN values allowed by Access. For production, an Entra
-# security group is usually easier to operate; replace this with:
-# entra_allowed_group_ids = ["<ENTRA_GROUP_OBJECT_ID>"]
-entra_allowed_emails = ["admin@example.com"]
+# Reusable authorization boundaries. All servers selecting the same profile
+# share one Access application, policy, hostname, port set, and clipboard rules.
+rdp_access_profiles = {
+  operators = {
+    application_name   = "Customer Windows RDP"
+    application_domain = "rdp.example.com"
+    ports              = [3389]
+
+    # For production, prefer Entra group Object IDs. For a pilot, use exact
+    # emails instead and leave allowed_group_ids empty.
+    allowed_group_ids = ["<ENTRA_GROUP_OBJECT_ID>"]
+    allowed_emails    = []
+
+    # Secure default: no text or file transfer in either direction.
+    clipboard_local_to_remote_formats = []
+    clipboard_remote_to_local_formats = []
+  }
+}
+
+# Add one object per Windows machine. virtual_network_id is the Cloudflare Zero
+# Trust VNet on the Tunnel route covering that IP, not an Azure VNet/GCP VPC ID.
+rdp_servers = {
+  gcp_windows = {
+    hostname           = "gcp-windows"
+    ipv4               = "10.168.0.27"
+    virtual_network_id = "<CLOUDFLARE_VNET_FOR_GCP_ROUTE>"
+    access_profile     = "operators"
+  }
+
+  helix_windows = {
+    hostname           = "helix-windows"
+    ipv4               = "10.7.0.6"
+    virtual_network_id = "<CLOUDFLARE_VNET_FOR_HELIX_ROUTE>"
+    access_profile     = "operators"
+  }
+}

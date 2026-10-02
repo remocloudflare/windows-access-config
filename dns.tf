@@ -1,8 +1,8 @@
 resource "cloudflare_dns_record" "rdp" {
-  count = var.create_dns_record ? 1 : 0
+  for_each = var.create_dns_records ? var.rdp_access_profiles : {}
 
   zone_id = var.zone_id
-  name    = var.application_domain
+  name    = each.value.application_domain
   type    = "A"
   content = "240.0.0.0"
   ttl     = 1

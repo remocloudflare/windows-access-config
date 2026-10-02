@@ -15,65 +15,46 @@ variable "zone_id" {
   type        = string
 }
 
-variable "application_domain" {
-  description = "Public hostname users open for browser-based RDP, for example rdp.example.com."
-  type        = string
+variable "rdp_servers" {
+  description = "Windows servers keyed by stable Terraform name. Each server selects an RDP access profile."
+  type = map(object({
+    hostname           = string
+    ipv4               = string
+    virtual_network_id = optional(string)
+    access_profile     = string
+  }))
 
   validation {
-    condition     = length(split(".", var.application_domain)) >= 2
-    error_message = "application_domain must be a fully qualified hostname."
+    condition = length(var.rdp_servers) > 0 && alltrue([
+      for server in values(var.rdp_servers) :
+      can(cidrhost("${server.ipv4}/32", 0)) && contains(keys(var.rdp_access_profiles), server.access_profile)
+    ])
+    error_message = "Each RDP server needs a valid IPv4 address and an access_profile key defined in rdp_access_profiles."
   }
 }
 
-variable "target_hostname" {
-  description = "Logical Access target name. This is a selector, not DNS."
-  type        = string
-  default     = "remo-win-vm"
-}
-
-variable "target_ipv4" {
-  description = "Windows server IP reachable through the selected Cloudflare Tunnel private route."
-  type        = string
-  default     = "10.168.0.27"
-
-  validation {
-    condition     = can(cidrhost("${var.target_ipv4}/32", 0))
-    error_message = "target_ipv4 must be a valid IPv4 address."
-  }
-}
-
-variable "virtual_network_id" {
-  description = "Cloudflare Zero Trust virtual-network UUID on the Tunnel CIDR route that covers target_ipv4. This is not an Azure VNet, GCP VPC, or Proxmox network ID. Leave null only when the matching route uses the account default Cloudflare virtual network."
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "rdp_port" {
-  description = "RDP listening port on the Windows server."
-  type        = number
-  default     = 3389
+variable "rdp_access_profiles" {
+  description = "Reusable authorization and session settings. Servers sharing a profile share one RDP Access application."
+  type = map(object({
+    application_name                  = string
+    application_domain                = string
+    ports                             = optional(set(number), [3389])
+    allowed_emails                    = optional(set(string), [])
+    allowed_group_ids                 = optional(set(string), [])
+    clipboard_local_to_remote_formats = optional(list(string), [])
+    clipboard_remote_to_local_formats = optional(list(string), [])
+  }))
 
   validation {
-    condition     = var.rdp_port >= 1 && var.rdp_port <= 65535
-    error_message = "rdp_port must be between 1 and 65535."
+    condition = length(var.rdp_access_profiles) > 0 && alltrue([
+      for profile in values(var.rdp_access_profiles) :
+      length(split(".", profile.application_domain)) >= 2 &&
+      length(profile.ports) > 0 &&
+      alltrue([for port in profile.ports : port >= 1 && port <= 65535]) &&
+      (length(profile.allowed_group_ids) > 0 || length(profile.allowed_emails) > 0)
+    ])
+    error_message = "Each profile needs an FQDN, at least one valid port, and at least one allowed email or Entra group ID."
   }
-}
-
-variable "entra_allowed_emails" {
-  description = "Exact Entra user email/UPN values allowed when entra_allowed_group_ids is empty."
-  type        = set(string)
-
-  validation {
-    condition     = length(var.entra_allowed_group_ids) > 0 || (length(var.entra_allowed_emails) > 0 && alltrue([for email in var.entra_allowed_emails : can(regex("^[^@ ]+@[^@ ]+[.][^@ ]+$", email))]))
-    error_message = "Provide at least one valid entra_allowed_email or Entra group object ID."
-  }
-}
-
-variable "entra_allowed_group_ids" {
-  description = "Optional Entra security group object IDs allowed to launch RDP. When set, group membership replaces the email allowlist."
-  type        = set(string)
-  default     = []
 }
 
 variable "manage_entra_idp" {
@@ -124,14 +105,8 @@ variable "entra_email_claim_name" {
   default     = "preferred_username"
 }
 
-variable "create_dns_record" {
-  description = "Create the proxied placeholder A record required by browser-rendered RDP."
+variable "create_dns_records" {
+  description = "Create proxied placeholder A records for all browser-rendered RDP profiles."
   type        = bool
   default     = true
-}
-
-variable "application_name" {
-  description = "Access application display name."
-  type        = string
-  default     = "Windows RDP"
 }
