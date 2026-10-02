@@ -17,6 +17,36 @@ Windows target 10.168.0.27
 
 The repository uses maps of reusable access profiles and Windows servers. Add servers without duplicating policy code; servers that select the same profile share one browser-RDP application and authorization policy.
 
+## What it looks like
+
+The screenshots below show the finished administrator configuration and clientless browser-RDP experience. Deployment-specific identifiers and unrelated environment details are redacted.
+
+### Cloudflare Access application
+
+![Cloudflare Access browser-RDP application configuration](docs/screenshots/access-application.png)
+
+### Access policy
+
+![Cloudflare Access policy and RDP data-flow controls](docs/screenshots/access-policy.png)
+
+### Infrastructure targets and tags
+
+![RDP infrastructure targets and administrative tags](docs/screenshots/infrastructure-targets.png)
+
+### Private routes and Cloudflare virtual network
+
+![Private route and Cloudflare virtual-network configuration](docs/screenshots/private-route-vnet.png)
+
+### Clientless RDP target picker
+
+Clientless users see the `rdp-` target names; infrastructure-target tags remain administrative metadata.
+
+![Clientless browser-RDP target picker](docs/screenshots/clientless-target-picker.png)
+
+### Browser RDP session
+
+![Windows desktop rendered through browser RDP](docs/screenshots/browser-rdp-session.png)
+
 ## Creates
 
 - One Access infrastructure target per `files/ips/windows-targets.json` entry.
