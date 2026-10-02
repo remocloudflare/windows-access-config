@@ -2,7 +2,7 @@ locals {
   target_hostnames_by_profile = {
     for profile_key, profile in var.rdp_access_profiles :
     profile_key => sort([
-      for server_key, server in var.rdp_servers : server.hostname
+      for server_key, server in local.rdp_servers : server.hostname
       if server.access_profile == profile_key
     ])
   }
@@ -26,15 +26,23 @@ locals {
 }
 
 resource "cloudflare_zero_trust_access_infrastructure_target" "windows" {
-  for_each = var.rdp_servers
+  for_each = local.rdp_servers
 
   account_id = var.account_id
   hostname   = each.value.hostname
+  tags       = each.value.tags
 
   ip = {
     ipv4 = {
       ip_addr            = each.value.ipv4
       virtual_network_id = each.value.virtual_network_id
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = length(local.invalid_rdp_servers) == 0
+      error_message = "Every windows-targets.tf entry must use a valid IPv4 address and an access_profile declared in rdp_access_profiles."
     }
   }
 }
@@ -55,7 +63,7 @@ resource "cloudflare_zero_trust_access_application" "windows_rdp" {
     port     = port
     protocol = "RDP"
     target_attributes = {
-      hostname = [for server_key, server in cloudflare_zero_trust_access_infrastructure_target.windows : server.hostname if var.rdp_servers[server_key].access_profile == each.key]
+      hostname = [for server_key, server in cloudflare_zero_trust_access_infrastructure_target.windows : server.hostname if local.rdp_servers[server_key].access_profile == each.key]
     }
   }]
 
@@ -75,7 +83,7 @@ resource "cloudflare_zero_trust_access_application" "windows_rdp" {
   lifecycle {
     precondition {
       condition     = length(local.target_hostnames_by_profile[each.key]) > 0
-      error_message = "Each rdp_access_profiles entry must be referenced by at least one rdp_servers entry."
+      error_message = "Each rdp_access_profiles entry must be referenced by at least one files/ips/windows-targets.json entry."
     }
   }
 }

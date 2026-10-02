@@ -10,6 +10,9 @@ zone_id    = "<CLOUDFLARE_ZONE_ID>"
 # Existing Microsoft Entra identity provider UUID in Cloudflare Access.
 existing_entra_idp_id = "<CLOUDFLARE_ENTRA_IDP_ID>"
 
+# Cloudflare Zero Trust VNet used by targets unless overridden by key.
+default_windows_target_virtual_network_id = "<CLOUDFLARE_VNET_ID>"
+
 # Reusable authorization boundaries. All servers selecting the same profile
 # share one Access application, policy, hostname, port set, and clipboard rules.
 rdp_access_profiles = {
@@ -26,23 +29,5 @@ rdp_access_profiles = {
     # Secure default: no text or file transfer in either direction.
     clipboard_local_to_remote_formats = []
     clipboard_remote_to_local_formats = []
-  }
-}
-
-# Add one object per Windows machine. virtual_network_id is the Cloudflare Zero
-# Trust VNet on the Tunnel route covering that IP, not an Azure VNet/GCP VPC ID.
-rdp_servers = {
-  gcp_windows = {
-    hostname           = "gcp-windows"
-    ipv4               = "10.168.0.27"
-    virtual_network_id = "<CLOUDFLARE_VNET_FOR_GCP_ROUTE>"
-    access_profile     = "operators"
-  }
-
-  helix_windows = {
-    hostname           = "helix-windows"
-    ipv4               = "10.7.0.6"
-    virtual_network_id = "<CLOUDFLARE_VNET_FOR_HELIX_ROUTE>"
-    access_profile     = "operators"
   }
 }

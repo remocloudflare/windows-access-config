@@ -15,22 +15,49 @@ variable "zone_id" {
   type        = string
 }
 
-variable "rdp_servers" {
-  description = "Windows servers keyed by stable Terraform name. Each server selects an RDP access profile."
-  type = map(object({
-    hostname           = string
-    ipv4               = string
-    virtual_network_id = optional(string)
-    access_profile     = string
-  }))
+variable "windows_target_ips_file" {
+  description = "Module-relative JSON file mapping stable Windows target names to IPv4 addresses."
+  type        = string
+  default     = "files/ips/windows-targets.json"
+}
 
-  validation {
-    condition = length(var.rdp_servers) > 0 && alltrue([
-      for server in values(var.rdp_servers) :
-      can(cidrhost("${server.ipv4}/32", 0)) && contains(keys(var.rdp_access_profiles), server.access_profile)
-    ])
-    error_message = "Each RDP server needs a valid IPv4 address and an access_profile key defined in rdp_access_profiles."
+variable "default_windows_target_virtual_network_id" {
+  description = "Default Cloudflare Zero Trust VNet UUID used by Windows targets."
+  type        = string
+}
+
+variable "windows_target_virtual_network_ids" {
+  description = "Optional per-target Cloudflare VNet overrides, keyed like the reusable Windows IP inventory."
+  type        = map(string)
+  default     = {}
+}
+
+variable "default_windows_target_access_profile" {
+  description = "Default RDP access-profile key used by Windows targets."
+  type        = string
+  default     = "operators"
+}
+
+variable "windows_target_access_profiles" {
+  description = "Optional per-target access-profile overrides, keyed like the reusable Windows IP inventory."
+  type        = map(string)
+  default     = {}
+}
+
+variable "default_windows_target_tags" {
+  description = "Tags applied to every Windows RDP infrastructure target."
+  type        = map(string)
+  default = {
+    protocol = "rdp"
+    platform = "windows"
+    managed  = "terraform"
   }
+}
+
+variable "windows_target_tags" {
+  description = "Optional per-target tags merged with default_windows_target_tags, keyed like the Windows target inventory."
+  type        = map(map(string))
+  default     = {}
 }
 
 variable "rdp_access_profiles" {
