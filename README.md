@@ -229,13 +229,21 @@ No API token is stored in Terraform files. The real `terraform.tfvars`, state, p
 3. Select the Windows target tile.
 4. Enter `AzureAD\\user@example.com` or `AzureAD\\user`. The browser initiates RDP and Windows prompts for that user's Entra password.
 
-Verify the connector can reach the target before troubleshooting Access:
+Verify the connector can reach the target before troubleshooting Access.
+
+From Windows PowerShell:
 
 ```powershell
 Test-NetConnection <TARGET_IP> -Port 3389
 ```
 
-Run that from a Windows host on the connector network, or use an equivalent TCP test from the connector host.
+From macOS or Linux:
+
+```sh
+nc -vz <TARGET_IP> 3389
+```
+
+Run the test from a host on the connector network. A test from an unrelated network does not prove that the Cloudflare Tunnel connector can reach the target.
 
 ## Security notes
 
