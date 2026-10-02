@@ -43,6 +43,12 @@ Clientless users see the `rdp-` target names; infrastructure-target tags remain 
 
 ![Clientless browser-RDP target picker](docs/screenshots/clientless-target-picker.png)
 
+### Browser RDP sign-in
+
+The browser prompts for the Windows credential after Cloudflare Access authorizes the user. The target and username are redacted in this public example.
+
+![Browser RDP Windows sign-in prompt](docs/screenshots/browser-rdp-sign-in.png)
+
 ### Browser RDP session
 
 ![Windows desktop rendered through browser RDP](docs/screenshots/browser-rdp-session.png)
