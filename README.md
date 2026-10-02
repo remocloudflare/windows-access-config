@@ -33,7 +33,7 @@ The repository currently defaults to the existing `remo-win-vm` private address 
 3. TCP 3389 reachable from the `cloudflared` connector to the Windows host.
 4. RDP enabled on an Entra-joined Windows host. Cloudflare Access authenticates and authorizes the user at the edge, but Windows still performs a second authentication using that user's Entra-backed Windows credential.
 5. A Cloudflare zone for `application_domain`.
-6. An API token exported as `CLOUDFLARE_API_TOKEN` with:
+6. A Cloudflare API token stored as `cloudflare_api_token` in the local, Git-ignored `terraform.tfvars`, with:
    - Account — Access: Apps and Policies — Edit
    - Account — Access: Organizations, Identity Providers, and Groups — Read (Edit only if this project creates the Entra IdP)
    - Account — Cloudflare Tunnel — Read (and Edit if you manage routes separately)
@@ -49,26 +49,21 @@ Set the values in `terraform.tfvars`. `entra_allowed_emails` is intentionally re
 
 ### API token
 
-Preferred: export the token so it does not appear in any Terraform variable file:
-
-```sh
-export CLOUDFLARE_API_TOKEN="<token>"
-terraform plan
-```
-
-Alternatively, put it in the local, Git-ignored `terraform.tfvars`:
+This repository expects the token in the local, Git-ignored `terraform.tfvars`:
 
 ```hcl
 cloudflare_api_token = "<token>"
 ```
 
-Create the token in **Cloudflare dashboard → My Profile → API Tokens → Create Token → Custom token**. Scope it to the Cloudflare account and `application_domain` zone used by this deployment. Do not use a Global API Key, commit the token, or copy a token from another account without checking its scopes.
+Copy `terraform.tfvars.example` to `terraform.tfvars` and replace the `cloudflare_api_token` placeholder. The provider also supports `CLOUDFLARE_API_TOKEN` for automation, but the documented local workflow for this repo is the ignored tfvars file.
+
+Create the token in **Cloudflare dashboard → My Profile → API Tokens → Create Token → Custom token**. Scope it to the Cloudflare account and `application_domain` zone used by this deployment. Do not use a Global API Key, commit the token, or copy a token from another account without checking its scopes. Before committing, verify `git check-ignore terraform.tfvars` succeeds.
 
 ### Where each value comes from
 
 | Variable | What it is | Where to find it |
 | --- | --- | --- |
-| `cloudflare_api_token` | Optional local API credential; environment variable is preferred | **My Profile → API Tokens**; save only in ignored `terraform.tfvars` if not exporting `CLOUDFLARE_API_TOKEN` |
+| `cloudflare_api_token` | Cloudflare API credential used by Terraform | **My Profile → API Tokens**; save it only in the Git-ignored `terraform.tfvars` |
 | `account_id` | Cloudflare account that owns Zero Trust, the Tunnel route, Entra IdP, and Access app | Cloudflare dashboard URL after `dash.cloudflare.com/`, or **Account home → Account ID** |
 | `zone_id` | Cloudflare zone that owns `application_domain` | **Websites → your zone → Overview → Zone ID** |
 | `application_domain` | New public hostname used to open browser RDP | Choose an unused hostname in that zone, such as `rdp.example.com`; Terraform creates its proxied placeholder DNS record |
