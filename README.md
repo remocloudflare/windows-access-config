@@ -4,7 +4,7 @@ Terraform for browser-based RDP to a Windows server through Cloudflare Access an
 
 ```text
 User browser
-    │ Access authentication
+    │ Entra ID authentication + Access authorization
     ▼
 rdp.example.com (proxied DNS + Access)
     │ browser RDP proxy
@@ -21,7 +21,8 @@ The repository currently defaults to the existing `remo-win-vm` private address 
 
 - One Access infrastructure target for the Windows server.
 - One browser-rendered RDP Access application with a target criterion on TCP 3389.
-- One exact-email allow policy.
+- One Entra-only login method with instant authentication.
+- One Entra email/UPN or security-group allow policy.
 - One proxied placeholder DNS A record (`240.0.0.0`) unless disabled.
 - Clipboard transfer disabled in both directions by default.
 
@@ -30,7 +31,7 @@ The repository currently defaults to the existing `remo-win-vm` private address 
 1. A Cloudflare Tunnel already connected to the target network.
 2. A private-network route for `10.168.0.27/32` (or the replacement target) assigned to the selected virtual network.
 3. TCP 3389 reachable from the `cloudflared` connector to the Windows host.
-4. RDP enabled on Windows and a Windows username/password available. Cloudflare Access does not manage the Windows credential.
+4. RDP enabled on an Entra-joined Windows host. Cloudflare Access authenticates and authorizes the user at the edge, but Windows still performs a second authentication using that user's Entra-backed Windows credential.
 5. A Cloudflare zone for `application_domain`.
 6. An API token exported as `CLOUDFLARE_API_TOKEN` with:
    - Account — Access: Apps and Policies — Edit
@@ -43,16 +44,25 @@ The repository currently defaults to the existing `remo-win-vm` private address 
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Set the five values in `terraform.tfvars`. `allowed_emails` is intentionally required and has no permissive default.
+Set the values in `terraform.tfvars`. `entra_allowed_emails` is intentionally required unless `entra_allowed_group_ids` is populated; there is no permissive domain-wide default.
 
 If using the account's default virtual network, remove `virtual_network_id` from `terraform.tfvars`; Terraform will omit it.
 
-To pin authentication to one IdP, add:
+By default, this project reuses an existing Cloudflare Access Entra IdP. Set its ID:
 
 ```hcl
-allowed_idp_ids              = ["<IDENTITY_PROVIDER_ID>"]
-auto_redirect_to_identity    = true
+existing_entra_idp_id = "<CLOUDFLARE_ENTRA_IDP_ID>"
 ```
+
+The application is always pinned to that Entra IdP and uses instant authentication. To authorize an Entra security group instead of individual users, set its Object ID:
+
+```hcl
+entra_allowed_group_ids = ["<ENTRA_SECURITY_GROUP_OBJECT_ID>"]
+```
+
+Group authorization requires **Support groups** on the Cloudflare Entra integration and the Microsoft Graph permissions documented by Cloudflare. SCIM is recommended for readable group names and deprovisioning but is not required when using Object IDs.
+
+To create a new Entra integration in this project instead, set `manage_entra_idp = true` and supply `entra_client_id`, `entra_client_secret`, and `entra_directory_id` in the ignored `terraform.tfvars`. The Entra redirect URI is `https://<team-name>.cloudflareaccess.com/cdn-cgi/access/callback`.
 
 If the DNS record already exists, set `create_dns_record = false` and import/manage the record separately.
 
@@ -71,9 +81,9 @@ No API token is stored in Terraform files. The real `terraform.tfvars`, state, p
 ## Connect and verify
 
 1. Open the Zero Trust App Launcher: `https://<team-name>.cloudflareaccess.com`.
-2. Authenticate with an email in `allowed_emails`.
+2. Authenticate with Entra. Access must identify the user by a value in `entra_allowed_emails`, or the user must belong to an allowed Entra group.
 3. Select the Windows target tile.
-4. Enter the Windows credential (for a local account, use `.\username` when needed).
+4. Enter `AzureAD\\user@example.com` or `AzureAD\\user`. The browser initiates RDP and Windows prompts for that user's Entra password.
 
 Verify the connector can reach the target before troubleshooting Access:
 
@@ -88,6 +98,7 @@ Run that from a Windows host on the connector network, or use an equivalent TCP 
 - Do not expose TCP 3389 directly to the Internet; route the private address through Cloudflare Tunnel.
 - New RDP policies deny clipboard transfer by default here. Add only the required text clipboard formats after reviewing the data-loss risk.
 - Browser RDP does not support file transfer, audio, or local printing.
-- Entra-joined Windows hosts may require disabling NLA for browser RDP because PKU2U is not supported. Prefer a local/domain account where disabling NLA is unacceptable.
+- Cloudflare Access Entra authentication does **not** pass the Access token into Windows and is not passwordless Windows SSO. It is the first gate; Windows Entra authentication is the second gate.
+- Entra-joined Windows hosts require disabling enforcement of NLA for browser RDP because PKU2U is not supported. Disable only NLA; keep the RDP security layer at **Negotiate** or **SSL/TLS**, never legacy RDP security.
 
 Cloudflare reference: https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/use-cases/rdp/rdp-browser/

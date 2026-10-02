@@ -53,31 +53,68 @@ variable "rdp_port" {
   }
 }
 
-variable "allowed_emails" {
-  description = "Exact user email addresses allowed to launch the RDP session."
+variable "entra_allowed_emails" {
+  description = "Exact Entra user email/UPN values allowed when entra_allowed_group_ids is empty."
   type        = set(string)
 
   validation {
-    condition     = length(var.allowed_emails) > 0 && alltrue([for email in var.allowed_emails : can(regex("^[^@ ]+@[^@ ]+[.][^@ ]+$", email))])
-    error_message = "Provide at least one valid email address."
+    condition     = length(var.entra_allowed_group_ids) > 0 || (length(var.entra_allowed_emails) > 0 && alltrue([for email in var.entra_allowed_emails : can(regex("^[^@ ]+@[^@ ]+[.][^@ ]+$", email))]))
+    error_message = "Provide at least one valid entra_allowed_email or Entra group object ID."
   }
 }
 
-variable "allowed_idp_ids" {
-  description = "Optional Access identity provider IDs. Empty permits all account IdPs. Use one ID with auto_redirect_to_identity=true."
+variable "entra_allowed_group_ids" {
+  description = "Optional Entra security group object IDs allowed to launch RDP. When set, group membership replaces the email allowlist."
   type        = set(string)
   default     = []
 }
 
-variable "auto_redirect_to_identity" {
-  description = "Skip the IdP picker. Requires exactly one allowed_idp_ids entry."
+variable "manage_entra_idp" {
+  description = "Create the Entra identity provider in this project. False reuses existing_entra_idp_id."
   type        = bool
   default     = false
+}
+
+variable "existing_entra_idp_id" {
+  description = "Existing Cloudflare Access Entra identity provider ID. Required when manage_entra_idp=false."
+  type        = string
+  default     = ""
 
   validation {
-    condition     = !var.auto_redirect_to_identity || length(var.allowed_idp_ids) == 1
-    error_message = "auto_redirect_to_identity requires exactly one allowed_idp_ids entry."
+    condition     = var.manage_entra_idp || can(regex("^[0-9a-fA-F-]{36}$", var.existing_entra_idp_id))
+    error_message = "Set existing_entra_idp_id to an existing Entra IdP UUID or set manage_entra_idp=true."
   }
+}
+
+variable "entra_idp_name" {
+  description = "Display name used when this project creates the Entra identity provider."
+  type        = string
+  default     = "Microsoft Entra ID"
+}
+
+variable "entra_client_id" {
+  description = "Entra application client ID. Required only when manage_entra_idp=true."
+  type        = string
+  default     = ""
+}
+
+variable "entra_client_secret" {
+  description = "Entra application client secret. Required only when manage_entra_idp=true."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "entra_directory_id" {
+  description = "Entra directory (tenant) ID. Required only when manage_entra_idp=true."
+  type        = string
+  default     = ""
+}
+
+variable "entra_email_claim_name" {
+  description = "Entra ID-token claim Cloudflare uses as the user email/UPN."
+  type        = string
+  default     = "preferred_username"
 }
 
 variable "create_dns_record" {

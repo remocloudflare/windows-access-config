@@ -17,8 +17,8 @@ resource "cloudflare_zero_trust_access_application" "windows_rdp" {
   domain     = var.application_domain
 
   app_launcher_visible      = true
-  allowed_idps              = var.allowed_idp_ids
-  auto_redirect_to_identity = var.auto_redirect_to_identity
+  allowed_idps              = [local.entra_idp_id]
+  auto_redirect_to_identity = true
 
   target_criteria = [{
     port     = var.rdp_port
@@ -29,10 +29,10 @@ resource "cloudflare_zero_trust_access_application" "windows_rdp" {
   }]
 
   policies = [{
-    name       = "Allow approved RDP users"
+    name       = "Allow approved Entra users"
     decision   = "allow"
     precedence = 1
-    include = [for email in sort(tolist(var.allowed_emails)) : {
+    include = length(var.entra_allowed_group_ids) > 0 ? local.entra_group_rules : [for email in sort(tolist(var.entra_allowed_emails)) : {
       email = { email = email }
     }]
     connection_rules = {
