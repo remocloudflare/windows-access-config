@@ -3,6 +3,13 @@ variable "account_id" {
   type        = string
 }
 
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token. Prefer CLOUDFLARE_API_TOKEN; this optional input exists for local terraform.tfvars and must never be committed."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "zone_id" {
   description = "Cloudflare zone ID for the browser RDP application hostname."
   type        = string

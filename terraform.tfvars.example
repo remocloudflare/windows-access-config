@@ -1,3 +1,7 @@
+# Optional local authentication. Prefer exporting CLOUDFLARE_API_TOKEN instead.
+# If used, place the real token only in the ignored terraform.tfvars.
+# cloudflare_api_token = "<CLOUDFLARE_API_TOKEN>"
+
 # Cloudflare account that owns Zero Trust, the Tunnel route, and Entra IdP.
 # Dashboard: Account home -> Account ID.
 account_id = "<CLOUDFLARE_ACCOUNT_ID>"

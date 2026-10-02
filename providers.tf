@@ -9,4 +9,7 @@ terraform {
   }
 }
 
-provider "cloudflare" {}
+provider "cloudflare" {
+  # Prefer CLOUDFLARE_API_TOKEN. This fallback permits an ignored tfvars value.
+  api_token = var.cloudflare_api_token != "" ? var.cloudflare_api_token : null
+}
