@@ -17,48 +17,6 @@ Windows target 10.168.0.27
 
 The repository uses maps of reusable access profiles and Windows servers. Add servers without duplicating policy code; servers that select the same profile share one browser-RDP application and authorization policy.
 
-## What it looks like
-
-The finished deployment includes both administrator-facing Cloudflare configuration and a clientless browser-RDP experience. Add fresh captures from the deployed environment under `docs/screenshots/`; the filenames below are the repository convention.
-
-### Cloudflare Access application
-
-Shows the browser-rendered RDP application, hostname, Entra login method, and session settings.
-
-![Cloudflare Access application configuration](docs/screenshots/access-application.png)
-
-### Access policy and Entra authorization
-
-Shows the Access policy that authorizes the configured Entra users or security groups.
-
-![Access policy and Entra authorization](docs/screenshots/access-policy.png)
-
-### RDP infrastructure targets
-
-Shows the visible `rdp-` target names and administrative tags such as `protocol=rdp`, `platform=windows`, and `managed=terraform`.
-
-![RDP infrastructure targets and tags](docs/screenshots/infrastructure-targets.png)
-
-### Private route and Cloudflare virtual network
-
-Shows that the private route covering the Windows target uses the same Cloudflare virtual network selected by Terraform.
-
-![Private route and Cloudflare virtual network](docs/screenshots/private-route-vnet.png)
-
-### Clientless RDP target picker
-
-Shows the user-facing target picker. Clientless users see the `rdp-` hostname prefixes; infrastructure-target tags are administrative metadata and are not displayed here.
-
-![Clientless RDP target picker](docs/screenshots/clientless-target-picker.png)
-
-### Browser RDP session
-
-Shows the Windows sign-in or active desktop rendered in the browser after Cloudflare Access authorization.
-
-![Browser RDP session](docs/screenshots/browser-rdp-session.png)
-
-> Capture guidance: use a test identity and redact personal email addresses, account identifiers, tokens, session details, and unrelated customer information before publishing screenshots. Do not capture Windows passwords or other credentials.
-
 ## Creates
 
 - One Access infrastructure target per `files/ips/windows-targets.json` entry.
