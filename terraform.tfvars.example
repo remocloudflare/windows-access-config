@@ -1,0 +1,5 @@
+account_id          = "<CLOUDFLARE_ACCOUNT_ID>"
+zone_id             = "<CLOUDFLARE_ZONE_ID>"
+application_domain  = "rdp.example.com"
+virtual_network_id  = "<CLOUDFLARE_VIRTUAL_NETWORK_ID>"
+allowed_emails      = ["admin@example.com"]

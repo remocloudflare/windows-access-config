@@ -1,0 +1,21 @@
+# Terraform working data and state
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Local credentials and deployment values
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+.env
+
+# Saved plans
+*.tfplan
+plan.out
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
