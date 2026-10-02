@@ -36,7 +36,7 @@ variable "target_ipv4" {
 }
 
 variable "virtual_network_id" {
-  description = "Cloudflare Tunnel virtual network ID containing the route to target_ipv4. Leave null to use the account default virtual network."
+  description = "Cloudflare Zero Trust virtual-network UUID on the Tunnel CIDR route that covers target_ipv4. This is not an Azure VNet, GCP VPC, or Proxmox network ID. Leave null only when the matching route uses the account default Cloudflare virtual network."
   type        = string
   default     = null
   nullable    = true

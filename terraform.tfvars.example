@@ -1,6 +1,29 @@
-account_id          = "<CLOUDFLARE_ACCOUNT_ID>"
-zone_id             = "<CLOUDFLARE_ZONE_ID>"
-application_domain  = "rdp.example.com"
-virtual_network_id  = "<CLOUDFLARE_VIRTUAL_NETWORK_ID>"
+# Cloudflare account that owns Zero Trust, the Tunnel route, and Entra IdP.
+# Dashboard: Account home -> Account ID.
+account_id = "<CLOUDFLARE_ACCOUNT_ID>"
+
+# Zone that owns application_domain.
+# Dashboard: Websites -> your zone -> Overview -> Zone ID.
+zone_id = "<CLOUDFLARE_ZONE_ID>"
+
+# Choose an unused hostname in the zone. Terraform creates the proxied DNS record.
+application_domain = "rdp.example.com"
+
+# Private Windows IP reachable from the cloudflared connector. Defaults to
+# 10.168.0.27 in variables.tf; set it explicitly for a different server.
+target_ipv4 = "10.168.0.27"
+
+# Cloudflare Zero Trust virtual-network UUID on the Tunnel route covering
+# target_ipv4. This is NOT an Azure VNet, GCP VPC, or Proxmox network ID.
+# Dashboard: Zero Trust -> Networks -> Routes. If the matching route uses the
+# default Cloudflare virtual network, remove this line.
+virtual_network_id = "<CLOUDFLARE_ZERO_TRUST_VIRTUAL_NETWORK_ID>"
+
+# Existing Microsoft Entra identity provider UUID in Cloudflare Access.
+# Dashboard: Zero Trust -> Integrations -> Identity providers -> Entra ID.
 existing_entra_idp_id = "<CLOUDFLARE_ENTRA_IDP_ID>"
-entra_allowed_emails  = ["admin@example.com"]
+
+# Exact Entra email/UPN values allowed by Access. For production, an Entra
+# security group is usually easier to operate; replace this with:
+# entra_allowed_group_ids = ["<ENTRA_GROUP_OBJECT_ID>"]
+entra_allowed_emails = ["admin@example.com"]
